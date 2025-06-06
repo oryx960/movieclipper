@@ -33,5 +33,5 @@ To run it using Docker Compose:
 docker compose up
 ```
 
-The included `docker-compose.yml` pulls `ghcr.io/<user>/movieclipper:latest`
+The included `docker-compose.yml` pulls `ghcr.io/oryx960/movieclipper:latest`
 and exposes the web UI on port 8000.
