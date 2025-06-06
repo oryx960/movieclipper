@@ -1,17 +1,23 @@
 import subprocess
 from pathlib import Path
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 def check_ffmpeg():
     try:
         subprocess.run(["ffmpeg", "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        logger.info("ffmpeg found")
         return True
-    except Exception:
+    except Exception as exc:
+        logger.error("ffmpeg check failed: %s", exc)
         return False
 
 
 def get_duration(path: Path) -> float:
     """Return duration of a media file in seconds."""
+    logger.debug("Getting duration for %s", path)
     result = subprocess.run(
         [
             "ffprobe",
@@ -28,7 +34,9 @@ def get_duration(path: Path) -> float:
         text=True,
     )
     try:
-        return float(result.stdout.strip())
+        duration = float(result.stdout.strip())
+        logger.debug("Duration for %s: %s", path, duration)
+        return duration
     except ValueError:
         return 0.0
 
@@ -60,4 +68,7 @@ def create_clip(movie: Path, dest: Path, duration: float):
         "aac",
         str(dest),
     ]
-    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logger.info("Running ffmpeg for %s", movie)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        logger.error("ffmpeg failed for %s: %s", movie, result.stderr)

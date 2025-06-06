@@ -25,6 +25,11 @@ def scan_movies(directory: str, stop_event=None) -> Iterator[Path]:
     """Scan directory for movies and generate backlog clips."""
     directory = Path(directory)
     movies = get_movies_to_process(directory)
+    logger.info("Scanning %s for movies", directory)
+    if not movies:
+        logger.info("No unprocessed movies found")
+    else:
+        logger.info("%d movies queued for processing", len(movies))
     config = load_config()
     processed = set(config.get("processed_movies", []))
 
@@ -37,7 +42,10 @@ def scan_movies(directory: str, stop_event=None) -> Iterator[Path]:
         backlog_dir = movie.parent / "backlog"
         out_path = backlog_dir / movie.name
         if not out_path.exists():
+            logger.info("Creating clip for %s", movie)
             create_clip(movie, out_path, duration)
+        else:
+            logger.info("Clip already exists for %s", movie)
         processed.add(str(movie))
         config["processed_movies"] = list(processed)
         save_config(config)
