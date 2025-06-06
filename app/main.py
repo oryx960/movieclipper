@@ -37,6 +37,10 @@ async def home(request: Request):
         },
     )
 
+@app.get("/progress")
+async def progress_status():
+    return {"progress": progress, "recent": recent}
+
 @app.post("/test-jellyfin")
 async def test_jellyfin(url: str = Form(...), api_key: str = Form(...)):
     global connection_log
