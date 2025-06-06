@@ -1,43 +1,83 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Movie Backlog</title>
-</head>
-<body>
-    <h1>Movie Backlog Scanner</h1>
-    <form action="/save-jellyfin" method="post" id="config-form">
-        Jellyfin URL: <input name="url" value="{{ config.jellyfin.url }}"><br>
-        API Key: <input name="api_key" value="{{ config.jellyfin.api_key }}"><br>
-        Library Path: <input name="library_path" value="{{ config.library_path }}"><br>
-        <button type="submit">Save Jellyfin Server</button>
-        <button type="button" id="test-btn">Test Connection</button>
-    </form>
-    <pre id="log">{{ connection_log }}</pre>
-    <form action="/start-scan" method="post" style="margin-top:10px;">
-        <button type="submit">Start Scan</button>
-    </form>
-    <form action="/stop-scan" method="post" style="margin-top:10px;">
-        <button type="submit">Stop Scan</button>
-    </form>
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
-    <h2>Progress</h2>
-    <progress value="{{ progress.index }}" max="{{ progress.total }}"></progress>
-    <div>Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
+export default function MovieBacklogScanner() {
+  const [url, setUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [libraryPath, setLibraryPath] = useState('');
+  const [log, setLog] = useState('');
+  const [progress, setProgress] = useState({ index: 0, total: 0, current: '' });
+  const [recent, setRecent] = useState([]);
 
-    <h2>Last Movies Scanned</h2>
-    <ul>
-    {% for movie in recent %}
-        <li>{{ movie }}</li>
-    {% endfor %}
-    </ul>
-    <script>
-    document.getElementById('test-btn').addEventListener('click', async () => {
-        const form = document.getElementById('config-form');
-        const data = new FormData(form);
-        const res = await fetch('/test-jellyfin', {method: 'POST', body: data});
-        const json = await res.json();
-        document.getElementById('log').textContent = json.message;
+  const handleTestConnection = async () => {
+    const formData = new FormData();
+    formData.append('url', url);
+    formData.append('api_key', apiKey);
+    formData.append('library_path', libraryPath);
+    const res = await fetch('/test-jellyfin', {
+      method: 'POST',
+      body: formData
     });
-    </script>
-</body>
-</html>
+    const json = await res.json();
+    setLog(json.message);
+  };
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Movie Backlog Scanner</h1>
+
+      <Card className="mb-6">
+        <CardContent className="space-y-4 p-6">
+          <div>
+            <label>Jellyfin URL</label>
+            <Input value={url} onChange={e => setUrl(e.target.value)} />
+          </div>
+          <div>
+            <label>API Key</label>
+            <Input value={apiKey} onChange={e => setApiKey(e.target.value)} />
+          </div>
+          <div>
+            <label>Library Path</label>
+            <Input value={libraryPath} onChange={e => setLibraryPath(e.target.value)} />
+          </div>
+          <div className="flex gap-4">
+            <Button type="submit" form="config-form">Save Jellyfin Server</Button>
+            <Button type="button" onClick={handleTestConnection}>Test Connection</Button>
+          </div>
+          <pre className="bg-black text-white p-4 rounded text-sm">{log}</pre>
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-4 mb-6">
+        <form action="/start-scan" method="post">
+          <Button type="submit">Start Scan</Button>
+        </form>
+        <form action="/stop-scan" method="post">
+          <Button type="submit" variant="destructive">Stop Scan</Button>
+        </form>
+      </div>
+
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Progress</h2>
+          <Progress value={(progress.index / progress.total) * 100 || 0} className="mb-2" />
+          <div>Movie {progress.index} / {progress.total}: {progress.current}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Last Movies Scanned</h2>
+          <ul className="list-disc list-inside space-y-1">
+            {recent.map((movie, i) => (
+              <li key={i}>{movie}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
