@@ -23,3 +23,15 @@ docker run -p 8000:8000 -v /path/to/config:/config -v /movies:/movies \
 
 `/config` is where the application stores its configuration file.  Mount your
 movie library inside the container so it can read the files.
+
+## Pulling from GHCR
+
+A prebuilt container image is available from the GitHub Container Registry.
+To run it using Docker Compose:
+
+```bash
+docker compose up
+```
+
+The included `docker-compose.yml` pulls `ghcr.io/<user>/movieclipper:latest`
+and exposes the web UI on port 8000.
