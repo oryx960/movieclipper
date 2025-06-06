@@ -1,83 +1,82 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Backlog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6">
+  <div class="max-w-3xl mx-auto space-y-8">
 
-export default function MovieBacklogScanner() {
-  const [url, setUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [libraryPath, setLibraryPath] = useState('');
-  const [log, setLog] = useState('');
-  const [progress, setProgress] = useState({ index: 0, total: 0, current: '' });
-  const [recent, setRecent] = useState([]);
+    <h1 class="text-3xl font-bold text-center">Movie Backlog Scanner</h1>
 
-  const handleTestConnection = async () => {
-    const formData = new FormData();
-    formData.append('url', url);
-    formData.append('api_key', apiKey);
-    formData.append('library_path', libraryPath);
-    const res = await fetch('/test-jellyfin', {
-      method: 'POST',
-      body: formData
-    });
-    const json = await res.json();
-    setLog(json.message);
-  };
-
-  return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Movie Backlog Scanner</h1>
-
-      <Card className="mb-6">
-        <CardContent className="space-y-4 p-6">
-          <div>
-            <label>Jellyfin URL</label>
-            <Input value={url} onChange={e => setUrl(e.target.value)} />
-          </div>
-          <div>
-            <label>API Key</label>
-            <Input value={apiKey} onChange={e => setApiKey(e.target.value)} />
-          </div>
-          <div>
-            <label>Library Path</label>
-            <Input value={libraryPath} onChange={e => setLibraryPath(e.target.value)} />
-          </div>
-          <div className="flex gap-4">
-            <Button type="submit" form="config-form">Save Jellyfin Server</Button>
-            <Button type="button" onClick={handleTestConnection}>Test Connection</Button>
-          </div>
-          <pre className="bg-black text-white p-4 rounded text-sm">{log}</pre>
-        </CardContent>
-      </Card>
-
-      <div className="flex gap-4 mb-6">
-        <form action="/start-scan" method="post">
-          <Button type="submit">Start Scan</Button>
-        </form>
-        <form action="/stop-scan" method="post">
-          <Button type="submit" variant="destructive">Stop Scan</Button>
-        </form>
+    <!-- Config Form -->
+    <form action="/save-jellyfin" method="post" id="config-form" class="bg-gray-800 p-6 rounded-xl shadow space-y-4">
+      <div>
+        <label class="block text-sm mb-1">Jellyfin URL</label>
+        <input name="url" value="{{ config.jellyfin.url }}" class="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" />
       </div>
+      <div>
+        <label class="block text-sm mb-1">API Key</label>
+        <input name="api_key" value="{{ config.jellyfin.api_key }}" class="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Library Path</label>
+        <input name="library_path" value="{{ config.library_path }}" class="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" />
+      </div>
+      <div class="flex gap-4 mt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">
+          Save Jellyfin Server
+        </button>
+        <button type="button" id="test-btn" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded font-semibold">
+          Test Connection
+        </button>
+      </div>
+    </form>
 
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Progress</h2>
-          <Progress value={(progress.index / progress.total) * 100 || 0} className="mb-2" />
-          <div>Movie {progress.index} / {progress.total}: {progress.current}</div>
-        </CardContent>
-      </Card>
+    <!-- Log Display -->
+    <pre id="log" class="bg-gray-800 p-4 rounded-xl text-sm whitespace-pre-wrap">{{ connection_log }}</pre>
 
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Last Movies Scanned</h2>
-          <ul className="list-disc list-inside space-y-1">
-            {recent.map((movie, i) => (
-              <li key={i}>{movie}</li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+    <!-- Scan Buttons -->
+    <div class="flex gap-4">
+      <form action="/start-scan" method="post">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold">
+          Start Scan
+        </button>
+      </form>
+      <form action="/stop-scan" method="post">
+        <button type="submit" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold">
+          Stop Scan
+        </button>
+      </form>
     </div>
-  );
-}
+
+    <!-- Progress -->
+    <div class="bg-gray-800 p-6 rounded-xl">
+      <h2 class="text-xl font-semibold mb-2">Progress</h2>
+      <progress value="{{ progress.index }}" max="{{ progress.total }}" class="w-full h-4"></progress>
+      <div class="mt-2">Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
+    </div>
+
+    <!-- Last Movies Scanned -->
+    <div class="bg-gray-800 p-6 rounded-xl">
+      <h2 class="text-xl font-semibold mb-2">Last Movies Scanned</h2>
+      <ul class="list-disc list-inside space-y-1">
+        {% for movie in recent %}
+          <li>{{ movie }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('test-btn').addEventListener('click', async () => {
+      const form = document.getElementById('config-form');
+      const data = new FormData(form);
+      const res = await fetch('/test-jellyfin', { method: 'POST', body: data });
+      const json = await res.json();
+      document.getElementById('log').textContent = json.message;
+    });
+  </script>
+</body>
+</html>
