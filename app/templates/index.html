@@ -52,20 +52,20 @@
     </div>
 
     <!-- Progress -->
-    <div class="bg-gray-800 p-6 rounded-xl">
-      <h2 class="text-xl font-semibold mb-2">Progress</h2>
-      <progress value="{{ progress.index }}" max="{{ progress.total }}" class="w-full h-4"></progress>
-      <div class="mt-2">Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
-    </div>
+      <div class="bg-gray-800 p-6 rounded-xl">
+        <h2 class="text-xl font-semibold mb-2">Progress</h2>
+        <progress id="progress-bar" value="{{ progress.index }}" max="{{ progress.total }}" class="w-full h-4"></progress>
+        <div id="progress-text" class="mt-2">Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
+      </div>
 
     <!-- Last Movies Scanned -->
     <div class="bg-gray-800 p-6 rounded-xl">
       <h2 class="text-xl font-semibold mb-2">Last Movies Scanned</h2>
-      <ul class="list-disc list-inside space-y-1">
-        {% for movie in recent %}
-          <li>{{ movie }}</li>
-        {% endfor %}
-      </ul>
+        <ul id="recent-list" class="list-disc list-inside space-y-1">
+          {% for movie in recent %}
+            <li>{{ movie }}</li>
+          {% endfor %}
+        </ul>
     </div>
   </div>
 
@@ -77,6 +77,27 @@
       const json = await res.json();
       document.getElementById('log').textContent = json.message;
     });
+  </script>
+  <script>
+    async function refreshProgress() {
+      const res = await fetch('/progress');
+      if (!res.ok) return;
+      const data = await res.json();
+      const bar = document.getElementById('progress-bar');
+      bar.max = data.progress.total;
+      bar.value = data.progress.index;
+      document.getElementById('progress-text').textContent =
+        `Movie ${data.progress.index} / ${data.progress.total}: ${data.progress.current}`;
+      const list = document.getElementById('recent-list');
+      list.innerHTML = '';
+      for (const movie of data.recent) {
+        const li = document.createElement('li');
+        li.textContent = movie;
+        list.appendChild(li);
+      }
+    }
+    refreshProgress();
+    setInterval(refreshProgress, 1000);
   </script>
 </body>
 </html>
