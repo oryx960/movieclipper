@@ -1,3 +1,4 @@
+#Start APP
 import uvicorn
 from app.self_check import run_checks
 
