@@ -16,12 +16,18 @@ def _find_movies(directory: Path) -> Iterator[Path]:
 
 
 def get_movies_to_process(directory: Path) -> List[Path]:
+    """Return movies needing backlog clips."""
     config = load_config()
     processed = set(config.get("processed_movies", []))
-    return [p for p in _find_movies(directory) if str(p) not in processed]
+    movies = []
+    for p in _find_movies(directory):
+        backlog_path = p.parent / "backlog" / p.name
+        if not backlog_path.exists() or str(p) not in processed:
+            movies.append(p)
+    return movies
 
 
-def scan_movies(directory: str, stop_event=None) -> Iterator[Path]:
+def scan_movies(directory: str, stop_event=None, progress: dict | None = None) -> Iterator[Path]:
     """Scan directory for movies and generate backlog clips."""
     directory = Path(directory)
     movies = get_movies_to_process(directory)
@@ -38,15 +44,19 @@ def scan_movies(directory: str, stop_event=None) -> Iterator[Path]:
             logger.info("Scan stopped by user")
             break
         logger.info("Processing %s", movie)
+        if progress is not None:
+            progress["movie_progress"] = 0
         duration = get_duration(movie)
         backlog_dir = movie.parent / "backlog"
         out_path = backlog_dir / movie.name
         if not out_path.exists():
             logger.info("Creating clip for %s", movie)
-            create_clip(movie, out_path, duration)
+            create_clip(movie, out_path, duration, progress)
         else:
             logger.info("Clip already exists for %s", movie)
         processed.add(str(movie))
         config["processed_movies"] = list(processed)
         save_config(config)
+        if progress is not None:
+            progress["movie_progress"] = 100
         yield movie

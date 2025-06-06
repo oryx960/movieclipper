@@ -41,7 +41,8 @@ def get_duration(path: Path) -> float:
         return 0.0
 
 
-def create_clip(movie: Path, dest: Path, duration: float):
+def create_clip(movie: Path, dest: Path, duration: float, progress: dict | None = None):
+    """Create a short clip for *movie* at *dest* updating *progress* if provided."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     start = 0
     if duration > 190:
@@ -66,9 +67,40 @@ def create_clip(movie: Path, dest: Path, duration: float):
         "30",
         "-c:a",
         "aac",
+        "-progress",
+        "-",
+        "-nostats",
         str(dest),
     ]
     logger.info("Running ffmpeg for %s", movie)
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if result.returncode != 0:
-        logger.error("ffmpeg failed for %s: %s", movie, result.stderr)
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+    total_ms = 10 * 1_000_000
+    if progress is not None:
+        progress["movie_progress"] = 0
+    while True:
+        line = proc.stdout.readline()
+        if not line:
+            if proc.poll() is not None:
+                break
+            continue
+        line = line.strip()
+        if line.startswith("out_time_ms="):
+            try:
+                out_ms = int(line.split("=")[1])
+                pct = min(100, int(out_ms * 100 / total_ms))
+                if progress is not None:
+                    progress["movie_progress"] = pct
+            except ValueError:
+                pass
+        elif line.startswith("progress=") and line.split("=")[1] == "end":
+            if progress is not None:
+                progress["movie_progress"] = 100
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        logger.error("ffmpeg failed for %s: %s", movie, stderr)

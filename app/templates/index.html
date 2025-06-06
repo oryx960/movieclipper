@@ -49,12 +49,18 @@
           Stop Scan
         </button>
       </form>
+      <form action="/clear-backlogs" method="post">
+        <button type="submit" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded font-semibold">
+          Clear Backlogs
+        </button>
+      </form>
     </div>
 
     <!-- Progress -->
       <div class="bg-gray-800 p-6 rounded-xl">
         <h2 class="text-xl font-semibold mb-2">Progress</h2>
         <progress id="progress-bar" value="{{ progress.index }}" max="{{ progress.total }}" class="w-full h-4"></progress>
+        <progress id="movie-bar" value="{{ progress.movie_progress }}" max="100" class="w-full h-2 mt-2"></progress>
         <div id="progress-text" class="mt-2">Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
       </div>
 
@@ -86,6 +92,8 @@
       const bar = document.getElementById('progress-bar');
       bar.max = data.progress.total;
       bar.value = data.progress.index;
+      const movieBar = document.getElementById('movie-bar');
+      movieBar.value = data.progress.movie_progress;
       document.getElementById('progress-text').textContent =
         `Movie ${data.progress.index} / ${data.progress.total}: ${data.progress.current}`;
       const list = document.getElementById('recent-list');
