@@ -115,13 +115,13 @@ async def stop_scan():
     return RedirectResponse("/", status_code=303)
 
 
-@app.post("/clear-backlogs")
-async def clear_backlogs():
+@app.post("/clear-backdrops")
+async def clear_backdrops():
     config = load_config()
     library = Path(config["library_path"])
-    for backlog in library.rglob("backlog"):
-        if backlog.is_dir():
-            shutil.rmtree(backlog)
+    for backdrop in library.rglob("backdrops"):
+        if backdrop.is_dir():
+            shutil.rmtree(backdrop)
     return RedirectResponse("/", status_code=303)
 
 @app.on_event("startup")

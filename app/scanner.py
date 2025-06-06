@@ -11,24 +11,26 @@ logger = logging.getLogger(__name__)
 def _find_movies(directory: Path) -> Iterator[Path]:
     exts = {".mkv", ".mp4", ".avi", ".mov"}
     for path in directory.rglob("*"):
+        if "backdrops" in path.parts:
+            continue
         if path.suffix.lower() in exts and path.is_file():
             yield path
 
 
 def get_movies_to_process(directory: Path) -> List[Path]:
-    """Return movies needing backlog clips."""
+    """Return movies needing backdrop clips."""
     config = load_config()
     processed = set(config.get("processed_movies", []))
     movies = []
     for p in _find_movies(directory):
-        backlog_path = p.parent / "backlog" / p.name
-        if not backlog_path.exists() or str(p) not in processed:
+        backdrop_path = p.parent / "backdrops" / p.name
+        if not backdrop_path.exists() or str(p) not in processed:
             movies.append(p)
     return movies
 
 
 def scan_movies(directory: str, stop_event=None, progress: dict | None = None) -> Iterator[Path]:
-    """Scan directory for movies and generate backlog clips."""
+    """Scan directory for movies and generate backdrop clips."""
     directory = Path(directory)
     movies = get_movies_to_process(directory)
     logger.info("Scanning %s for movies", directory)
@@ -47,8 +49,8 @@ def scan_movies(directory: str, stop_event=None, progress: dict | None = None) -
         if progress is not None:
             progress["movie_progress"] = 0
         duration = get_duration(movie)
-        backlog_dir = movie.parent / "backlog"
-        out_path = backlog_dir / movie.name
+        backdrop_dir = movie.parent / "backdrops"
+        out_path = backdrop_dir / movie.name
         if not out_path.exists():
             logger.info("Creating clip for %s", movie)
             create_clip(movie, out_path, duration, progress)
