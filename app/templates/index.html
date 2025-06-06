@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Backlog</title>
+</head>
+<body>
+    <h1>Movie Backlog Scanner</h1>
+    <form action="/save-jellyfin" method="post">
+        Jellyfin URL: <input name="url" value="{{ config.jellyfin.url }}"><br>
+        API Key: <input name="api_key" value="{{ config.jellyfin.api_key }}"><br>
+        Library Path: <input name="library_path" value="{{ config.library_path }}"><br>
+        <button type="submit">Save Jellyfin Server</button>
+    </form>
+    <form action="/start-scan" method="post" style="margin-top:10px;">
+        <button type="submit">Start Scan</button>
+    </form>
+    <form action="/stop-scan" method="post" style="margin-top:10px;">
+        <button type="submit">Stop Scan</button>
+    </form>
+
+    <h2>Progress</h2>
+    <div>Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
+
+    <h2>Last Movies Scanned</h2>
+    <ul>
+    {% for movie in recent %}
+        <li>{{ movie }}</li>
+    {% endfor %}
+    </ul>
+    </form>
+</body>
+</html>
