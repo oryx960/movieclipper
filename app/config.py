@@ -18,6 +18,7 @@ def load_config():
     data.setdefault("processed_movies", [])
     data.setdefault("jellyfin", {"url": "", "api_key": ""})
     data.setdefault("library_path", "./movies")
+    data.setdefault("last_jellyfin_scan", "1970-01-01T00:00:00")
     return data
 
 def save_config(data):

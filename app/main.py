@@ -7,7 +7,8 @@ from pathlib import Path
 
 from app.ffmpeg_utils import check_ffmpeg
 from app.config import load_config, save_config
-from app.jellyfin import test_jellyfin_connection
+from datetime import datetime
+from app.jellyfin import test_jellyfin_connection, get_latest_item_time
 from app.scanner import scan_movies, get_movies_to_process
 
 app = FastAPI()
@@ -20,19 +21,28 @@ scan_thread = None
 stop_event = Event()
 progress = {"current": "", "index": 0, "total": 0}
 recent = []
+connection_log = ""
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     config = load_config()
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "config": config, "progress": progress, "recent": recent},
+        {
+            "request": request,
+            "config": config,
+            "progress": progress,
+            "recent": recent,
+            "connection_log": connection_log,
+        },
     )
 
 @app.post("/test-jellyfin")
 async def test_jellyfin(url: str = Form(...), api_key: str = Form(...)):
-    result = test_jellyfin_connection(url, api_key)
-    return {"success": result, "message": "Connection OK" if result else "Failed"}
+    global connection_log
+    success, message = test_jellyfin_connection(url, api_key)
+    connection_log = message
+    return {"success": success, "message": message}
 
 @app.post("/save-jellyfin")
 async def save_jellyfin(url: str = Form(...), api_key: str = Form(...), library_path: str = Form(...)):
@@ -45,7 +55,14 @@ async def save_jellyfin(url: str = Form(...), api_key: str = Form(...), library_
 @app.post("/start-scan")
 async def start_scan():
     global scan_thread
+    global connection_log
     config = load_config()
+    latest = get_latest_item_time(config["jellyfin"]["url"], config["jellyfin"]["api_key"])
+    last_scan = datetime.fromisoformat(config.get("last_jellyfin_scan"))
+    if latest and latest <= last_scan:
+        logger.info("No new items found on Jellyfin; skipping scan")
+        return RedirectResponse("/", status_code=303)
+
     if scan_thread and scan_thread.is_alive():
         return RedirectResponse("/", status_code=303)
 
@@ -54,6 +71,7 @@ async def start_scan():
     progress["total"] = len(movies)
     progress["current"] = ""
     stop_event.clear()
+    connection_log = ""
 
     def _run():
         for idx, movie in enumerate(scan_movies(config["library_path"], stop_event), start=1):
@@ -62,6 +80,9 @@ async def start_scan():
             recent.insert(0, movie.name)
             del recent[5:]
         progress["current"] = ""
+        if latest:
+            config["last_jellyfin_scan"] = latest.isoformat()
+            save_config(config)
 
     scan_thread = Thread(target=_run, daemon=True)
     scan_thread.start()
