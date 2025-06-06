@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 import logging
 from threading import Thread, Event
 from pathlib import Path
+import shutil
 
 from app.ffmpeg_utils import check_ffmpeg
 from app.config import load_config, save_config
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 scan_thread = None
 stop_event = Event()
-progress = {"current": "", "index": 0, "total": 0}
+progress = {"current": "", "index": 0, "total": 0, "movie_progress": 0}
 recent = []
 connection_log = ""
 
@@ -77,18 +78,20 @@ async def start_scan():
     progress["index"] = 0
     progress["total"] = len(movies)
     progress["current"] = ""
+    progress["movie_progress"] = 0
     stop_event.clear()
     connection_log = ""
 
     def _run():
         logger.info("Scan thread started")
-        for idx, movie in enumerate(scan_movies(config["library_path"], stop_event), start=1):
+        for idx, movie in enumerate(scan_movies(config["library_path"], stop_event, progress), start=1):
             progress["index"] = idx
             progress["current"] = movie.name
             recent.insert(0, movie.name)
             del recent[5:]
         logger.info("Scan thread finished")
         progress["current"] = ""
+        progress["movie_progress"] = 0
         if latest:
             config["last_jellyfin_scan"] = latest.isoformat()
             save_config(config)
@@ -100,7 +103,25 @@ async def start_scan():
 
 @app.post("/stop-scan")
 async def stop_scan():
+    global scan_thread
     stop_event.set()
+    if scan_thread:
+        scan_thread.join()
+        scan_thread = None
+    progress["current"] = ""
+    progress["index"] = 0
+    progress["total"] = 0
+    progress["movie_progress"] = 0
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/clear-backlogs")
+async def clear_backlogs():
+    config = load_config()
+    library = Path(config["library_path"])
+    for backlog in library.rglob("backlog"):
+        if backlog.is_dir():
+            shutil.rmtree(backlog)
     return RedirectResponse("/", status_code=303)
 
 @app.on_event("startup")
