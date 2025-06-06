@@ -5,12 +5,14 @@
 </head>
 <body>
     <h1>Movie Backlog Scanner</h1>
-    <form action="/save-jellyfin" method="post">
+    <form action="/save-jellyfin" method="post" id="config-form">
         Jellyfin URL: <input name="url" value="{{ config.jellyfin.url }}"><br>
         API Key: <input name="api_key" value="{{ config.jellyfin.api_key }}"><br>
         Library Path: <input name="library_path" value="{{ config.library_path }}"><br>
         <button type="submit">Save Jellyfin Server</button>
+        <button type="button" id="test-btn">Test Connection</button>
     </form>
+    <pre id="log">{{ connection_log }}</pre>
     <form action="/start-scan" method="post" style="margin-top:10px;">
         <button type="submit">Start Scan</button>
     </form>
@@ -19,6 +21,7 @@
     </form>
 
     <h2>Progress</h2>
+    <progress value="{{ progress.index }}" max="{{ progress.total }}"></progress>
     <div>Movie {{ progress.index }} / {{ progress.total }}: {{ progress.current }}</div>
 
     <h2>Last Movies Scanned</h2>
@@ -27,6 +30,14 @@
         <li>{{ movie }}</li>
     {% endfor %}
     </ul>
-    </form>
+    <script>
+    document.getElementById('test-btn').addEventListener('click', async () => {
+        const form = document.getElementById('config-form');
+        const data = new FormData(form);
+        const res = await fetch('/test-jellyfin', {method: 'POST', body: data});
+        const json = await res.json();
+        document.getElementById('log').textContent = json.message;
+    });
+    </script>
 </body>
 </html>
