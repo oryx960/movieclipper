@@ -11,11 +11,15 @@ def run_checks() -> bool:
     if not check_ffmpeg():
         logger.error("ffmpeg not found")
         ok = False
+    else:
+        logger.info("ffmpeg check passed")
     try:
         load_config()
     except Exception as exc:
         logger.error("Failed to load config: %s", exc)
         ok = False
+    else:
+        logger.info("Config loaded successfully")
     return ok
 
 

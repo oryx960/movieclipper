@@ -28,6 +28,7 @@ def test_jellyfin_connection(url: str, api_key: str) -> Tuple[bool, str]:
 def get_latest_item_time(url: str, api_key: str) -> Optional[datetime]:
     """Return the creation time of the most recently added library item."""
     try:
+        logger.debug("Querying Jellyfin for latest item")
         resp = requests.get(
             f"{url}/Items/Latest",
             params={"Limit": 1},
@@ -36,7 +37,9 @@ def get_latest_item_time(url: str, api_key: str) -> Optional[datetime]:
         )
         if resp.status_code == 200 and resp.json():
             item = resp.json()[0]
-            return datetime.fromisoformat(item["DateCreated"].rstrip("Z"))
+            created = datetime.fromisoformat(item["DateCreated"].rstrip("Z"))
+            logger.debug("Latest item time: %s", created)
+            return created
     except Exception as exc:  # pragma: no cover - network failure
         logger.error("Failed to query Jellyfin latest item: %s", exc)
     return None

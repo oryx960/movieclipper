@@ -56,6 +56,7 @@ async def save_jellyfin(url: str = Form(...), api_key: str = Form(...), library_
 async def start_scan():
     global scan_thread
     global connection_log
+    logger.info("Start scan requested")
     config = load_config()
     latest = get_latest_item_time(config["jellyfin"]["url"], config["jellyfin"]["api_key"])
     last_scan = datetime.fromisoformat(config.get("last_jellyfin_scan"))
@@ -64,9 +65,11 @@ async def start_scan():
         return RedirectResponse("/", status_code=303)
 
     if scan_thread and scan_thread.is_alive():
+        logger.info("Scan already running")
         return RedirectResponse("/", status_code=303)
 
     movies = get_movies_to_process(Path(config["library_path"]))
+    logger.info("Found %d movies to process", len(movies))
     progress["index"] = 0
     progress["total"] = len(movies)
     progress["current"] = ""
@@ -74,11 +77,13 @@ async def start_scan():
     connection_log = ""
 
     def _run():
+        logger.info("Scan thread started")
         for idx, movie in enumerate(scan_movies(config["library_path"], stop_event), start=1):
             progress["index"] = idx
             progress["current"] = movie.name
             recent.insert(0, movie.name)
             del recent[5:]
+        logger.info("Scan thread finished")
         progress["current"] = ""
         if latest:
             config["last_jellyfin_scan"] = latest.isoformat()
