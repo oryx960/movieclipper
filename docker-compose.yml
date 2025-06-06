@@ -1,0 +1,11 @@
+version: '3'
+services:
+  movieclipper:
+    image: ghcr.io/<user>/movieclipper:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/config
+      - ./movies:/movies
+    environment:
+      - MOVIECLIPPER_CONFIG_DIR=/config
