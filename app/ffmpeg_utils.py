@@ -41,7 +41,13 @@ def get_duration(path: Path) -> float:
         return 0.0
 
 
-def create_clip(movie: Path, dest: Path, duration: float, progress: dict | None = None):
+def create_clip(
+    movie: Path,
+    dest: Path,
+    duration: float,
+    progress: dict | None = None,
+    clip_length: int = 10,
+):
     """Create a short clip for *movie* at *dest* updating *progress* if provided."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     start = 0
@@ -58,7 +64,7 @@ def create_clip(movie: Path, dest: Path, duration: float, progress: dict | None 
         "-i",
         str(movie),
         "-t",
-        "10",
+        str(clip_length),
         "-c:v",
         "libx265",
         "-preset",
@@ -67,6 +73,8 @@ def create_clip(movie: Path, dest: Path, duration: float, progress: dict | None 
         "30",
         "-c:a",
         "aac",
+        "-af",
+        f"afade=t=in:st=0:d=1,afade=t=out:st={max(0, clip_length - 1)}:d=1",
         "-progress",
         "-",
         "-nostats",
@@ -80,7 +88,7 @@ def create_clip(movie: Path, dest: Path, duration: float, progress: dict | None 
         text=True,
         bufsize=1,
     )
-    total_ms = 10 * 1_000_000
+    total_ms = clip_length * 1_000_000
     if progress is not None:
         progress["movie_progress"] = 0
     while True:

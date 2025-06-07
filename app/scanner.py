@@ -41,19 +41,22 @@ def scan_movies(directory: str, stop_event=None, progress: dict | None = None) -
     config = load_config()
     processed = set(config.get("processed_movies", []))
 
-    for movie in movies:
+    for idx, movie in enumerate(movies, start=1):
         if stop_event and stop_event.is_set():
             logger.info("Scan stopped by user")
             break
         logger.info("Processing %s", movie)
         if progress is not None:
+            progress["index"] = idx
+            progress["current"] = movie.name
             progress["movie_progress"] = 0
         duration = get_duration(movie)
         backdrop_dir = movie.parent / "backdrops"
         out_path = backdrop_dir / movie.name
         if not out_path.exists():
             logger.info("Creating clip for %s", movie)
-            create_clip(movie, out_path, duration, progress)
+            clip_length = config.get("clip_length", 10)
+            create_clip(movie, out_path, duration, progress, clip_length=clip_length)
         else:
             logger.info("Clip already exists for %s", movie)
         processed.add(str(movie))
