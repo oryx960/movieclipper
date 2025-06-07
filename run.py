@@ -1,4 +1,4 @@
-#Start APP
+#Start APP locally
 import uvicorn
 from app.self_check import run_checks
 
