@@ -50,10 +50,16 @@ async def test_jellyfin(url: str = Form(...), api_key: str = Form(...)):
     return {"success": success, "message": message}
 
 @app.post("/save-jellyfin")
-async def save_jellyfin(url: str = Form(...), api_key: str = Form(...), library_path: str = Form(...)):
+async def save_jellyfin(
+    url: str = Form(...),
+    api_key: str = Form(...),
+    library_path: str = Form(...),
+    clip_length: int = Form(10),
+):
     config = load_config()
     config["jellyfin"] = {"url": url, "api_key": api_key}
     config["library_path"] = library_path
+    config["clip_length"] = clip_length
     save_config(config)
     return RedirectResponse("/", status_code=303)
 
@@ -84,9 +90,7 @@ async def start_scan():
 
     def _run():
         logger.info("Scan thread started")
-        for idx, movie in enumerate(scan_movies(config["library_path"], stop_event, progress), start=1):
-            progress["index"] = idx
-            progress["current"] = movie.name
+        for movie in scan_movies(config["library_path"], stop_event, progress):
             recent.insert(0, movie.name)
             del recent[5:]
         logger.info("Scan thread finished")

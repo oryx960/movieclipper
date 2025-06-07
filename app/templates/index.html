@@ -24,6 +24,10 @@
         <label class="block text-sm mb-1">Library Path</label>
         <input name="library_path" value="{{ config.library_path }}" class="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" />
       </div>
+      <div>
+        <label class="block text-sm mb-1">Clip Length (seconds)</label>
+        <input name="clip_length" type="number" min="1" value="{{ config.clip_length }}" class="w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" />
+      </div>
       <div class="flex gap-4 mt-4">
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold">
           Save Jellyfin Server
