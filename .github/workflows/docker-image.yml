@@ -8,6 +8,7 @@ on:
       - 'requirements.txt'
       - 'run.py'
       - '.github/workflows/docker-publish.yml'
+      - 'app/main.py'
 
 jobs:
   build:
